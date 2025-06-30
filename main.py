@@ -72,11 +72,11 @@ def process_text(
 
 async def gen_vectors(
     args: Args,
+    mongo_client: mongo.MongoClient,
     img_gen: ImageVGen,  
     txt_gen: TextVGen
 ):
-    db = mongo.db('DATABASE')
-    cl: AsyncCollection[FlatDoc] = mongo.collection(db, 'COLLECTION')
+    cl: AsyncCollection[FlatDoc] = mongo_client.collection()
     stream: AsyncCursor[FlatDoc] = cl.find({})
 
     it = 0
@@ -152,7 +152,7 @@ if __name__ == '__main__':
         img_gen = Siglip()
         txt_gen = EmbedTextV2()
         args = Args(iteration, batch_size, img_root)
-        mongo.connect()
-        asyncio.run(gen_vectors(args, img_gen, txt_gen))
+        mongo_client = mongo.MongoClient()
+        asyncio.run(gen_vectors(args, mongo_client, img_gen, txt_gen))
     except Exception as e:
         print(e)

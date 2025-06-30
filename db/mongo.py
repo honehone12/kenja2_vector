@@ -1,33 +1,32 @@
 import os
-from typing import Any
+from typing import final
 from pymongo import AsyncMongoClient
-from pymongo.asynchronous.database import AsyncDatabase
 from bson.binary import Binary, BinaryVectorDtype
 
-__client = None
+@final
+class MongoClient:
+    def __init__(self):
+        uri = os.getenv('MONGO_URI')
+        if uri is None:
+            raise ValueError('env for mongo uri not set')
+        
+        db = os.getenv('MONGO_DB')
+        if db is None:
+            raise ValueError(f'env for mongo db not set')
+        
+        cl = os.getenv("MONGO_CL")
+        if cl is None:
+            raise ValueError(f'env for mongo collection is not set')    
+        
+        self._client = AsyncMongoClient(uri)
+        self._db = self._client[db]
+        self._cl = self._db[cl]
 
-def connect():
-    global __client
+    def database(self):
+        return self._db
 
-    uri = os.getenv('MONGO_URI')
-    if uri is None:
-        raise ValueError('env for MONGO_URI not set')
-    __client = AsyncMongoClient(uri)
-
-def db(key: str):
-    if __client is None:
-        raise ValueError('client is not initialized')
-
-    db = os.getenv('DATABASE')
-    if db is None:
-        raise ValueError(f'env for {key} not set')
-    return __client[db]
-
-def collection(db: AsyncDatabase[Any], key: str):
-    collection = os.getenv(key)
-    if collection is None:
-        raise ValueError(f'env for {key} is not set')
-    return db[collection]
+    def collection(self):
+        return self._cl
 
 def compress_bin(vector):
     return Binary.from_vector(vector, dtype=BinaryVectorDtype.FLOAT32)
