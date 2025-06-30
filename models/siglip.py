@@ -31,4 +31,4 @@ class Siglip(ImageVGen):
                 return_tensors='pt'
             ).to(self._device)
             raw = self._model.get_image_features(**params)
-            return F.normalize(raw, p=2.0, dim=-1)
+            return F.normalize(raw, p=2.0, dim=-1).squeeze(0)
