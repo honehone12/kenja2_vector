@@ -14,7 +14,7 @@ class Siglip2(ImageVGen):
             raise ValueError('env for siglip model is not set')
 
         self._device = torch.device('cuda')
-        self._model = AutoModel.from_pretrained(model_name)
+        self._model = AutoModel.from_pretrained(model_name, attn_implementation='sdpa')
         self._model.eval().to(self._device)
         self._processor = AutoProcessor.from_pretrained(
             model_name, 
