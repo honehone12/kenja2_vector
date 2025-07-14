@@ -9,7 +9,7 @@ from interfaces.vgen import ImageVGen
 @final
 class Siglip2(ImageVGen):
     def __init__(self):
-        model_name = os.getenv('SIGLIP_MODEL')
+        model_name = os.getenv('IMG_EMBED_MODEL')
         if model_name is None:
             raise ValueError('env for siglip model is not set')
 
