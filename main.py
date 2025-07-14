@@ -11,7 +11,7 @@ from interfaces.vgen import ImageVGen, TextVGen
 from db import mongo
 from documents.documents import*
 from models.embed_text_v2 import EmbedTextV2
-from models.siglip import Siglip
+from models.siglip2 import Siglip2
 
 @final
 class Args:
@@ -149,7 +149,7 @@ if __name__ == '__main__':
         if img_root is None:
             raise ValueError('env for image root is not set')
 
-        img_gen = Siglip()
+        img_gen = Siglip2()
         txt_gen = EmbedTextV2()
         args = Args(iteration, batch_size, img_root)
         mongo_client = mongo.MongoClient()

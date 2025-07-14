@@ -7,7 +7,7 @@ from PIL import Image
 from interfaces.vgen import ImageVGen
 
 @final
-class Siglip(ImageVGen):
+class Siglip2(ImageVGen):
     def __init__(self):
         model_name = os.getenv('SIGLIP_MODEL')
         if model_name is None:
