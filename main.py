@@ -10,6 +10,7 @@ from pymongo.asynchronous.cursor import AsyncCursor
 from interfaces.vgen import ImageVGen, TextVGen
 from db import mongo
 from documents.documents import*
+from logger.logger import init_logger, log
 from models.embed_text_v2 import EmbedTextV2
 from models.siglip2 import Siglip2
 
@@ -36,7 +37,7 @@ def process_image(
 
     path = img_root + urlparse(url).path.removesuffix('/')
     if not os.path.exists(path):
-        print(f'image not found {path}')
+        log().warning(f'image not found {path}')
         d = DeleteOne(
             filter={'_id': id}
         )
@@ -76,6 +77,7 @@ async def gen_vectors(
     img_gen: ImageVGen,  
     txt_gen: TextVGen
 ):
+    l = log()
     cl: AsyncCollection[FlatDoc] = mongo_client.collection()
     stream: AsyncCursor[FlatDoc] = cl.find({})
 
@@ -115,22 +117,24 @@ async def gen_vectors(
 
         if len(batch) >= args.batch_size:
             res = await cl.bulk_write(batch)
-            print(f'{res.modified_count} updated')
+            l.info(f'{res.modified_count} updated')
             batch.clear()
 
         it += 1
         print(f'iteration {it} done')
         if it >= args.iteration:
-            print('iteration limit')
+            l.info('iteration limit')
             break
 
     if len(batch) > 0:
         res = await cl.bulk_write(batch)
-        print(f'{res.modified_count} updated')
+        l.info(f'{res.modified_count} updated')
 
-    print('done')
+    l.info('done')
 
 if __name__ == '__main__':
+    init_logger(__name__)
+
     try:
         if not load_dotenv():
             raise RuntimeError('failed to initialize dotenv')
@@ -155,4 +159,4 @@ if __name__ == '__main__':
         mongo_client = mongo.MongoClient()
         asyncio.run(gen_vectors(args, mongo_client, img_gen, txt_gen))
     except Exception as e:
-        print(e)
+        log().error(e)
