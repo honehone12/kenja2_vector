@@ -121,7 +121,7 @@ async def gen_vectors(
             batch.clear()
 
         it += 1
-        print(f'iteration {it} done')
+        l.info(f'iteration {it} done')
         if it >= args.iteration:
             l.info('iteration limit')
             break
