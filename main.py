@@ -2,7 +2,6 @@ import asyncio
 import os
 from typing import final
 from dotenv import load_dotenv
-from bson import ObjectId
 from pymongo import UpdateOne
 from pymongo.asynchronous.collection import AsyncCollection
 from pymongo.asynchronous.cursor import AsyncCursor
@@ -25,47 +24,6 @@ class Args:
         self.batch_size = batch_size
         self.img_root = img_root
 
-def process_image(
-    img_root: str,
-    img_name: str, 
-    id: ObjectId,
-    img_gen: ImageVGen 
-):
-    if len(img_name) == 0:
-        raise ValueError('empty url')
-
-    path = f'{img_root}/{img_name}'
-    if not os.path.exists(path):
-        raise ValueError(f'image not found {path}')
-
-    v = img_gen.gen_image_vector(path)
-    b = mongo.compress_bin(v)
-    u = UpdateOne(
-        filter={'_id': id},
-        update={
-            '$set': {IMG_VEC_FIELD: b},
-            '$unset': {'img': ''}
-        }
-    )
-    return u, True
-
-def process_text(
-    field: str,
-    text: str, 
-    id: ObjectId,
-    txt_gen: TextVGen 
-):
-    if len(text) == 0:
-        raise ValueError('empty text')
-
-    v = txt_gen.gen_text_vector(text)
-    b = mongo.compress_bin(v)
-    u = UpdateOne(
-        filter={'_id': id},
-        update={'$set': {field: b}}
-    )
-    return u
-
 async def gen_vectors(
     args: Args,
     mongo_client: mongo.MongoClient,
@@ -82,24 +40,34 @@ async def gen_vectors(
         id = doc['_id']
 
         if doc.get(IMG_VEC_FIELD) is None:
-            op, ok = process_image(
-                args.img_root, 
-                doc['img'], 
-                id, 
-                img_gen
+            img_name = doc['img']
+            if len(img_name) == 0:
+                raise ValueError('empty url')
+
+            path = f'{img_root}/{img_name}'
+            if not os.path.exists(path):
+                raise ValueError(f'image not found {path}')
+
+            v = img_gen.gen_image_vector(path)
+            b = mongo.compress_bin(v)
+            u = UpdateOne(
+                filter={'_id': id},
+                update={'$set': {IMG_VEC_FIELD: b}}
             )
-            batch.append(op)
-            if not ok:
-                continue
+            batch.append(u)
             
         if doc.get(TXT_VEC_FIELD) is None:
-            op = process_text(
-                TXT_VEC_FIELD, 
-                doc['description'], 
-                id,
-                txt_gen
+            text = doc['description']
+            if len(text) == 0:
+                raise ValueError('empty text')
+
+            v = txt_gen.gen_text_vector(text)
+            b = mongo.compress_bin(v)
+            u = UpdateOne(
+                filter={'_id': id},
+                update={'$set': {TXT_VEC_FIELD: b}}
             )
-            batch.append(op)
+            batch.append(u)
 
         if len(batch) >= args.batch_size:
             res = await cl.bulk_write(batch)
