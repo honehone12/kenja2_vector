@@ -1,10 +1,9 @@
 import asyncio
 import os
 from typing import final
-from urllib.parse import urlparse
 from dotenv import load_dotenv
 from bson import ObjectId
-from pymongo import DeleteOne, UpdateOne
+from pymongo import UpdateOne
 from pymongo.asynchronous.collection import AsyncCollection
 from pymongo.asynchronous.cursor import AsyncCursor
 from interfaces.vgen import ImageVGen, TextVGen
@@ -28,20 +27,16 @@ class Args:
 
 def process_image(
     img_root: str,
-    url: str, 
+    img_name: str, 
     id: ObjectId,
     img_gen: ImageVGen 
 ):
-    if len(url) == 0:
+    if len(img_name) == 0:
         raise ValueError('empty url')
 
-    path = img_root + urlparse(url).path.removesuffix('/')
+    path = f'{img_root}/{img_name}'
     if not os.path.exists(path):
-        log().warning(f'image not found {path}')
-        d = DeleteOne(
-            filter={'_id': id}
-        )
-        return d, False
+        raise ValueError(f'image not found {path}')
 
     v = img_gen.gen_image_vector(path)
     b = mongo.compress_bin(v)
@@ -101,15 +96,6 @@ async def gen_vectors(
             op = process_text(
                 TXT_VEC_FIELD, 
                 doc['description'], 
-                id,
-                txt_gen
-            )
-            batch.append(op)
-
-        if doc.get(STF_VEC_FIELD) is None:
-            op = process_text(
-                STF_VEC_FIELD, 
-                doc['staff'], 
                 id,
                 txt_gen
             )
