@@ -59,7 +59,7 @@ async def gen_vectors(
             batch.append(u)
             
         if doc.get(TXT_VEC_FIELD) is None:
-            text = doc['description']
+            text = doc.get('description')
             if text is None:
                 l.info('skipping null text')
             else:
