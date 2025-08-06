@@ -33,10 +33,12 @@ async def gen_vectors(
     l = log()
     cl: AsyncCollection[FlatDoc] = mongo_client.collection()
     stream: AsyncCursor[FlatDoc] = cl.find({})
+    l.info('converting stream to list...')
+    list = await stream.to_list()
 
     it = 0
     batch = []
-    async for doc in stream:
+    for doc in list:
         id = doc['_id']
 
         if doc.get(IMG_VEC_FIELD) is None:
@@ -58,16 +60,19 @@ async def gen_vectors(
             
         if doc.get(TXT_VEC_FIELD) is None:
             text = doc['description']
-            if len(text) == 0:
-                raise ValueError('empty text')
+            if text is None:
+                l.info('skipping null text')
+            else:
+                if len(text) == 0:
+                    raise ValueError('empty text')
 
-            v = txt_gen.gen_text_vector(text)
-            b = mongo.compress_bin(v)
-            u = UpdateOne(
-                filter={'_id': id},
-                update={'$set': {TXT_VEC_FIELD: b}}
-            )
-            batch.append(u)
+                v = txt_gen.gen_text_vector(text)
+                b = mongo.compress_bin(v)
+                u = UpdateOne(
+                    filter={'_id': id},
+                    update={'$set': {TXT_VEC_FIELD: b}}
+                )
+                batch.append(u)
 
         if len(batch) >= args.batch_size:
             res = await cl.bulk_write(batch)
