@@ -2,7 +2,6 @@ import json
 from typing import final
 from dataclasses import dataclass, asdict
 from dotenv import load_dotenv
-from torch import Tensor
 from logger.logger import init_logger, log
 from interfaces.vgen import TextVGen
 from models.embed_text_v2 import EmbedTextV2
@@ -11,7 +10,7 @@ from models.embed_text_v2 import EmbedTextV2
 @dataclass
 class Emood:
     text: str
-    tensor: Tensor
+    tensor: list[float]
 
     def asdict(self):
         return asdict(self)
@@ -110,7 +109,7 @@ def export_text_vectors(txt_gen: TextVGen, file_name: str):
         list = []
         for text in v:
             tensor = txt_gen.gen_text_vector(text)
-            list.append(Emood(text, tensor).asdict())
+            list.append(Emood(text, tensor.tolist()).asdict())
         export[k] = list
     
     with open(file_name, 'w', encoding='utf-8') as f:
