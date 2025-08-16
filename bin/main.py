@@ -95,7 +95,7 @@ if __name__ == '__main__':
     init_logger(__name__)
 
     try:
-        if not load_dotenv():
+        if not load_dotenv('../.env'):
             raise RuntimeError('failed to initialize dotenv')
 
         itenv = os.getenv('ITERATION')
