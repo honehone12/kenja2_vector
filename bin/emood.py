@@ -42,7 +42,7 @@ __EMOOD_LIST = [
     [
         "I want a fast-paced, funny story that lifts my mood instantly.",
         "I'm looking for a comedy anime with absurd situations and lovable characters.",
-        "A lighthearted narrative that doesn’t take itself too seriously would be great.",
+        "A lighthearted narrative that doesn't take itself too seriously would be great.",
         "I need something that makes me laugh without needing emotional investment.",
     ],
     # Action / Battle / Tension
