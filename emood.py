@@ -1,4 +1,5 @@
 import json
+from dotenv import load_dotenv
 from dataclasses import dataclass
 from torch import Tensor
 from logger.logger import init_logger, log
@@ -117,6 +118,9 @@ if __name__ == "__main__":
     init_logger(__name__)
 
     try:
+        if not load_dotenv():
+            raise RuntimeError('failed to initialize dotenv')
+
         txt_gen = EmbedTextV2()
         export_text_vectors(txt_gen, 'emood.json')
     except Exception as e:
