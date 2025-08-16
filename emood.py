@@ -1,15 +1,20 @@
 import json
+from typing import final
+from dataclasses import dataclass, asdict
 from dotenv import load_dotenv
-from dataclasses import dataclass
 from torch import Tensor
 from logger.logger import init_logger, log
 from interfaces.vgen import TextVGen
 from models.embed_text_v2 import EmbedTextV2
 
+@final
 @dataclass
 class Emood:
     text: str
     tensor: Tensor
+
+    def asdict(self):
+        return asdict(self)
 
 __EMOOD_DICT = {
     "Soothing / Healing": [
@@ -105,7 +110,7 @@ def export_text_vectors(txt_gen: TextVGen, file_name: str):
         list = []
         for text in v:
             tensor = txt_gen.gen_text_vector(text)
-            list.append(Emood(text, tensor))
+            list.append(Emood(text, tensor).asdict())
         export[k] = list
     
     with open(file_name, 'w', encoding='utf-8') as f:
@@ -122,6 +127,6 @@ if __name__ == "__main__":
             raise RuntimeError('failed to initialize dotenv')
 
         txt_gen = EmbedTextV2()
-        export_text_vectors(txt_gen, 'emood.json')
+        export_text_vectors(txt_gen, 'export/emood.json')
     except Exception as e:
         log().error(e)
