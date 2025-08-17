@@ -126,6 +126,6 @@ if __name__ == "__main__":
             raise RuntimeError('failed to initialize dotenv')
 
         txt_gen = EmbedTextV2()
-        export_text_vectors(txt_gen, 'export/emood.json')
+        export_text_vectors(txt_gen, 'export/emood_txt.json')
     except Exception as e:
         log().error(e)
