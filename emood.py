@@ -3,19 +3,20 @@ from typing import final
 from dataclasses import dataclass, asdict
 from dotenv import load_dotenv
 from logger.logger import init_logger, log
-from interfaces.vgen import TextVGen
+from interfaces.vgen import TextVGen, ImageVGen
 from models.embed_text_v2 import EmbedTextV2
+from models.siglip2 import Siglip2
 
 @final
 @dataclass
 class Emood:
-    text: str
+    src: str
     tensor: list[float]
 
     def asdict(self):
         return asdict(self)
 
-__EMOOD_DICT = {
+__EMOOD_TXT_DICT = {
     "soothing_healing": [
         "I'm looking for a story that calms the heart and unfolds gently.", 
         "I want a peaceful narrative with kind characters and quiet moments.", 
@@ -102,20 +103,46 @@ __EMOOD_DICT = {
     ]
 }
 
-def export_text_vectors(txt_gen: TextVGen, file_name: str):
+__EMOOD_IMG_LIST = [
+    'imgs/angry.png',
+    'imgs/happy.png',
+    'imgs/hope.png',
+    'imgs/sad.png',
+    'imgs/safe.png',
+    'imgs/strong.png',
+    'imgs/surprise.png',
+    'imgs/unreal.png',
+]
+
+def export_txt_vecs(txt_gen: TextVGen, file_name: str):
     export = {}
 
-    for k, v in __EMOOD_DICT.items():
+    for k, v in __EMOOD_TXT_DICT.items():
         list = []
-        for text in v:
-            tensor = txt_gen.gen_text_vector(text)
-            list.append(Emood(text, tensor.tolist()).asdict())
+        for src in v:
+            tensor = txt_gen.gen_text_vector(src)
+            emood = Emood(src, tensor.tolist())
+            list.append(emood.asdict())
         export[k] = list
     
     with open(file_name, 'w', encoding='utf-8') as f:
-        j = json.dumps(export, ensure_ascii=False, indent=4)
+        j = json.dumps(export, ensure_ascii=False, indent=2)
         f.write(j)
     
+    log().info(f'file saved {file_name}')
+
+def export_img_vecs(img_gen: ImageVGen, file_name: str):
+    export = []
+
+    for img in __EMOOD_IMG_LIST:
+        tensor = img_gen.gen_image_vector(img)
+        emood = Emood(img, tensor.tolist())
+        export.append(emood.asdict())
+
+    with open(file_name, 'w', encoding='utf-8') as f:
+        j = json.dumps(export, ensure_ascii=False, indent=2)
+        f.write(j)
+
     log().info(f'file saved {file_name}')
 
 if __name__ == "__main__":
@@ -126,6 +153,8 @@ if __name__ == "__main__":
             raise RuntimeError('failed to initialize dotenv')
 
         txt_gen = EmbedTextV2()
-        export_text_vectors(txt_gen, 'export/emood_txt.json')
+        img_gen = Siglip2()
+        export_txt_vecs(txt_gen, 'export/emood_txt.json')
+        export_img_vecs(img_gen, 'export/emood_img.json')
     except Exception as e:
         log().error(e)
