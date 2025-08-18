@@ -23,12 +23,14 @@ class Siglip2(ImageVGen):
 
     @override
     def gen_image_vector(self, path: str) -> torch.Tensor:
-        img = Image.open(path).convert('RGB')
+        with Image.open(path)as img: 
+            rgb = img.convert('RGB')
         
-        with torch.no_grad():
-            params = self._processor(
-                images=[img],
-                return_tensors='pt'
-            ).to(self._device)
-            raw = self._model.get_image_features(**params)
-            return F.normalize(raw, p=2.0, dim=-1).squeeze(0)
+            with torch.no_grad():
+                params = self._processor(
+                    images=[rgb],
+                    return_tensors='pt'
+                ).to(self._device)
+                raw = self._model.get_image_features(**params)
+                return F.normalize(raw, p=2.0, dim=-1).squeeze(0)
+    
