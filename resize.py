@@ -30,7 +30,7 @@ if __name__ == "__main__":
         if not load_dotenv():
             raise RuntimeError('failed to initialize dotenv')
         
-        img_root = os.getenv('EMOOD_IMG_ROOT')
+        img_root = os.getenv('RESIZE_IMG_ROOT')
         if img_root is None:
             raise ValueError('env for image root is not set')
         
