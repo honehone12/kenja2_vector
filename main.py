@@ -5,30 +5,37 @@ from dotenv import load_dotenv
 from pymongo import UpdateOne
 from pymongo.asynchronous.collection import AsyncCollection
 from pymongo.asynchronous.cursor import AsyncCursor
-from interfaces.vgen import ImageVGen, TextVGen
+from interfaces.vgen import ImageVGen
 from db import mongo
 from documents.documents import*
 from logger.logger import init_logger, log
-from models.embed_text_v2 import EmbedTextV2
 from models.siglip2 import Siglip2
 
 @final
-class Args:
-    def __init__(
-        self,
-        iteration: int,
-        batch_size: int,
-        img_root: str 
-    ):
+class Envs:
+    def __init__(self):
+        img_root = os.getenv('IMG_ROOT')
+        if img_root is None:
+            raise ValueError('env for image root is not set')
+        
+        iteration = 100
+        itenv = os.getenv('ITERATION')
+        if itenv is not None:
+            iteration = int(itenv)
+
+        batch_size = 100
+        batchenv = os.getenv('BATCH_SIZE')
+        if batchenv is not None:
+            batch_size = int(batchenv)
+
         self.iteration = iteration
         self.batch_size = batch_size
         self.img_root = img_root
 
 async def gen_vectors(
-    args: Args,
+    envs: Envs,
     mongo_client: mongo.MongoClient,
-    img_gen: ImageVGen,  
-    txt_gen: TextVGen
+    img_gen: ImageVGen
 ):
     l = log()
     cl: AsyncCollection[FlatDoc] = mongo_client.collection()
@@ -46,7 +53,7 @@ async def gen_vectors(
             if len(img_name) == 0:
                 raise ValueError('empty url')
 
-            path = f'{img_root}/{img_name}'
+            path = f'{envs.img_root}/{img_name}'
             if not os.path.exists(path):
                 raise ValueError(f'image not found {path}')
 
@@ -57,31 +64,15 @@ async def gen_vectors(
                 update={'$set': {IMG_VEC_FIELD: b}}
             )
             batch.append(u)
-            
-        if doc.get(TXT_VEC_FIELD) is None:
-            text = doc.get('description')
-            if text is None:
-                l.info('skipping null text')
-            else:
-                if len(text) == 0:
-                    raise ValueError('empty text')
 
-                v = txt_gen.gen_text_vector(text)
-                b = mongo.compress_bin(v)
-                u = UpdateOne(
-                    filter={'_id': id},
-                    update={'$set': {TXT_VEC_FIELD: b}}
-                )
-                batch.append(u)
-
-        if len(batch) >= args.batch_size:
+        if len(batch) >= envs.batch_size:
             res = await cl.bulk_write(batch)
             l.info(f'{res.modified_count} updated')
             batch.clear()
 
         it += 1
         l.info(f'iteration {it} done')
-        if it >= args.iteration:
+        if it >= envs.iteration:
             l.info('iteration limit')
             break
 
@@ -98,24 +89,9 @@ if __name__ == '__main__':
         if not load_dotenv():
             raise RuntimeError('failed to initialize dotenv')
 
-        itenv = os.getenv('ITERATION')
-        iteration = 100
-        if itenv is not None:
-            iteration = int(itenv)
-
-        batchenv = os.getenv('BATCH_SIZE')
-        batch_size = 100
-        if batchenv is not None:
-            batch_size = int(batchenv)
-
-        img_root = os.getenv('IMG_ROOT')
-        if img_root is None:
-            raise ValueError('env for image root is not set')
-
+        envs = Envs()
         img_gen = Siglip2()
-        txt_gen = EmbedTextV2()
-        args = Args(iteration, batch_size, img_root)
         mongo_client = mongo.MongoClient()
-        asyncio.run(gen_vectors(args, mongo_client, img_gen, txt_gen))
+        asyncio.run(gen_vectors(envs, mongo_client, img_gen))
     except Exception as e:
         log().error(e)
