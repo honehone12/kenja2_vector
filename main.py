@@ -5,11 +5,11 @@ from dotenv import load_dotenv
 from pymongo import UpdateOne
 from pymongo.asynchronous.collection import AsyncCollection
 from pymongo.asynchronous.cursor import AsyncCursor
-from interfaces.vgen import ImageVGen
 from db import mongo
 from documents.documents import*
-from logger.logger import init_logger, log
+from interfaces.vgen import ImageVGen
 from models.siglip2 import Siglip2
+from logger.logger import init_logger, log
 
 @final
 class Envs:
@@ -17,18 +17,12 @@ class Envs:
         img_root = os.getenv('IMG_ROOT')
         if img_root is None:
             raise ValueError('env for image root is not set')
-        
-        iteration = 100
-        itenv = os.getenv('ITERATION')
-        if itenv is not None:
-            iteration = int(itenv)
 
         batch_size = 100
         batchenv = os.getenv('BATCH_SIZE')
         if batchenv is not None:
             batch_size = int(batchenv)
 
-        self.iteration = iteration
         self.batch_size = batch_size
         self.img_root = img_root
 
@@ -72,9 +66,6 @@ async def gen_vectors(
 
         it += 1
         l.info(f'iteration {it} done')
-        if it >= envs.iteration:
-            l.info('iteration limit')
-            break
 
     if len(batch) > 0:
         res = await cl.bulk_write(batch)
