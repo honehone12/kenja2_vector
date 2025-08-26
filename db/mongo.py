@@ -35,5 +35,5 @@ def compress_bin_f32(vector):
 def compress_bin_i8(vector):
     # int8 -> -128~127
     scale = 127
-    i = (vector * scale).round().to(torch.int8)
-    return Binary.from_vector(i, dtype=BinaryVectorDtype.INT8)
+    q = (vector * scale).round().to(torch.int8)
+    return Binary.from_vector(q, dtype=BinaryVectorDtype.INT8)
