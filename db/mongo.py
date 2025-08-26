@@ -28,5 +28,8 @@ class MongoClient:
     def collection(self):
         return self._cl
 
-def compress_bin(vector):
+def compress_bin_f32(vector):
     return Binary.from_vector(vector, dtype=BinaryVectorDtype.FLOAT32)
+
+def compress_bin_i8(vector):
+    return Binary.from_vector(vector, dtype=BinaryVectorDtype.INT8)

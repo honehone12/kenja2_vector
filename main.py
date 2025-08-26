@@ -52,7 +52,7 @@ async def gen_vectors(
                 raise ValueError(f'image not found {path}')
 
             v = img_gen.gen_image_vector(path)
-            b = mongo.compress_bin(v)
+            b = mongo.compress_bin_i8(v)
             u = UpdateOne(
                 filter={'_id': id},
                 update={'$set': {IMG_VEC_FIELD: b}}
