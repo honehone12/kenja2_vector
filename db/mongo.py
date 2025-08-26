@@ -1,4 +1,5 @@
 import os
+import torch
 from typing import final
 from pymongo import AsyncMongoClient
 from bson.binary import Binary, BinaryVectorDtype
@@ -32,4 +33,7 @@ def compress_bin_f32(vector):
     return Binary.from_vector(vector, dtype=BinaryVectorDtype.FLOAT32)
 
 def compress_bin_i8(vector):
-    return Binary.from_vector(vector, dtype=BinaryVectorDtype.INT8)
+    # int8 -> -128~127
+    scale = 127
+    i = (vector * scale).round().to(torch.int8)
+    return Binary.from_vector(i, dtype=BinaryVectorDtype.INT8)

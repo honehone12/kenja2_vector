@@ -42,7 +42,7 @@ async def gen_vectors(
     for doc in list:
         id = doc['_id']
 
-        if doc.get(IMG_VEC_FIELD) is None:
+        if doc.get('image_vector') is None:
             img_name = doc['img']
             if len(img_name) == 0:
                 raise ValueError('empty url')
@@ -55,7 +55,7 @@ async def gen_vectors(
             b = mongo.compress_bin_i8(v)
             u = UpdateOne(
                 filter={'_id': id},
-                update={'$set': {IMG_VEC_FIELD: b}}
+                update={'$set': {'image_vector': b}}
             )
             batch.append(u)
 
@@ -76,13 +76,10 @@ async def gen_vectors(
 if __name__ == '__main__':
     init_logger(__name__)
 
-    try:
-        if not load_dotenv():
-            raise RuntimeError('failed to initialize dotenv')
+    if not load_dotenv():
+        raise RuntimeError('failed to initialize dotenv')
 
-        envs = Envs()
-        img_gen = Siglip2()
-        mongo_client = mongo.MongoClient()
-        asyncio.run(gen_vectors(envs, mongo_client, img_gen))
-    except Exception as e:
-        log().error(e)
+    envs = Envs()
+    img_gen = Siglip2()
+    mongo_client = mongo.MongoClient()
+    asyncio.run(gen_vectors(envs, mongo_client, img_gen))
