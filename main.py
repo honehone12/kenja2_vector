@@ -1,8 +1,9 @@
 import asyncio
 import os
+import argparse
 from typing import final
 from dotenv import load_dotenv
-from pymongo import UpdateOne
+from pymongo import DeleteOne, UpdateOne
 from pymongo.asynchronous.collection import AsyncCollection
 from pymongo.asynchronous.cursor import AsyncCursor
 from db import mongo
@@ -29,7 +30,8 @@ class Envs:
 async def gen_vectors(
     envs: Envs,
     mongo_client: mongo.MongoClient,
-    img_gen: ImageVGen
+    img_gen: ImageVGen,
+    delte_not_found: bool
 ):
     l = log()
     cl: AsyncCollection[FlatDoc] = mongo_client.collection()
@@ -49,7 +51,13 @@ async def gen_vectors(
 
             path = f'{envs.img_root}/{img_name}'
             if not os.path.exists(path):
-                raise ValueError(f'image not found {path}')
+                if delte_not_found:
+                    d = DeleteOne(filter={'id': id})
+                    batch.append(d)
+                    l.warning(f'image not found, deleting: {path}')
+                    continue
+                else:
+                    raise ValueError(f'image not found {path}')
 
             v = img_gen.gen_image_vector(path)
             b = mongo.compress_bin_i8(v)
@@ -75,11 +83,22 @@ async def gen_vectors(
 
 if __name__ == '__main__':
     init_logger(__name__)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--delete-not-found', type=bool, default=False)
 
-    if not load_dotenv():
-        raise RuntimeError('failed to initialize dotenv')
+    try:
+        arg = parser.parse_args()
+        if not load_dotenv():
+            raise RuntimeError('failed to initialize dotenv')
 
-    envs = Envs()
-    img_gen = Siglip2()
-    mongo_client = mongo.MongoClient()
-    asyncio.run(gen_vectors(envs, mongo_client, img_gen))
+        envs = Envs()
+        img_gen = Siglip2()
+        mongo_client = mongo.MongoClient()
+        asyncio.run(gen_vectors(
+            envs, 
+            mongo_client, 
+            img_gen, 
+            arg.delete_not_found
+        ))
+    except Exception as e:
+        log().error(e)
