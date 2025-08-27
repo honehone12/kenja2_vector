@@ -1,7 +1,7 @@
 import asyncio
 import os
 import argparse
-from typing import final
+from typing import Any, final
 from dotenv import load_dotenv
 from pymongo import DeleteOne, UpdateOne
 from pymongo.asynchronous.collection import AsyncCollection
@@ -26,6 +26,11 @@ class Envs:
 
         self.batch_size = batch_size
         self.img_root = img_root
+
+async def batch_write(cl: AsyncCollection[FlatDoc], batch: list[Any]):
+    res = await cl.bulk_write(batch)
+    log().info(f'{res.modified_count} updated')
+    batch.clear()
 
 async def gen_vectors(
     envs: Envs,
@@ -68,16 +73,13 @@ async def gen_vectors(
             batch.append(u)
 
         if len(batch) >= envs.batch_size:
-            res = await cl.bulk_write(batch)
-            l.info(f'{res.modified_count} updated')
-            batch.clear()
+            await batch_write(cl, batch)
 
         it += 1
         l.info(f'iteration {it} done')
 
     if len(batch) > 0:
-        res = await cl.bulk_write(batch)
-        l.info(f'{res.modified_count} updated')
+        await batch_write(cl, batch)
 
     l.info('done')
 
