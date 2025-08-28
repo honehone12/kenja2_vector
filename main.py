@@ -57,7 +57,7 @@ async def gen_vectors(
             path = f'{envs.img_root}/{img_name}'
             if not os.path.exists(path):
                 if delete_not_found:
-                    d = DeleteOne(filter={'id': id})
+                    d = DeleteOne(filter={'_id': id})
                     batch.append(d)
                     l.warning(f'image not found, deleting: {path}')
                     continue
