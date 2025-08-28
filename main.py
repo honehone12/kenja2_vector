@@ -36,7 +36,7 @@ async def gen_vectors(
     envs: Envs,
     mongo_client: mongo.MongoClient,
     img_gen: ImageVGen,
-    delte_not_found: bool
+    delete_not_found: bool
 ):
     l = log()
     cl: AsyncCollection[FlatDoc] = mongo_client.collection()
@@ -56,7 +56,7 @@ async def gen_vectors(
 
             path = f'{envs.img_root}/{img_name}'
             if not os.path.exists(path):
-                if delte_not_found:
+                if delete_not_found:
                     d = DeleteOne(filter={'id': id})
                     batch.append(d)
                     l.warning(f'image not found, deleting: {path}')
