@@ -10,15 +10,15 @@ class MongoClient:
         uri = os.getenv('MONGO_URI')
         if uri is None:
             raise ValueError('env for mongo uri not set')
-        
+
         db = os.getenv('MONGO_DB')
         if db is None:
-            raise ValueError(f'env for mongo db not set')
-        
+            raise ValueError('env for mongo db not set')
+
         cl = os.getenv("MONGO_CL")
         if cl is None:
-            raise ValueError(f'env for mongo collection is not set')    
-        
+            raise ValueError('env for mongo collection is not set')
+
         self._client = AsyncMongoClient(uri)
         self._db = self._client[db]
         self._cl = self._db[cl]
