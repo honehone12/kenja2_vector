@@ -7,7 +7,7 @@ from pymongo import DeleteOne, UpdateOne
 from pymongo.asynchronous.collection import AsyncCollection
 from pymongo.asynchronous.cursor import AsyncCursor
 from db import mongo
-from documents.documents import FlatDoc
+from documents.documents import ImageDoc
 from interfaces.vgen import ImageVGen
 from models.siglip2 import Siglip2
 from logger.logger import init_logger, log
@@ -29,7 +29,7 @@ class Envs:
         self.img_root = img_root
 
 
-async def batch_write(cl: AsyncCollection[FlatDoc], batch: list[Any]):
+async def batch_write(cl: AsyncCollection[ImageDoc], batch: list[Any]):
     res = await cl.bulk_write(batch)
     log().info(f"{res.modified_count} updated")
     batch.clear()
@@ -41,10 +41,9 @@ async def gen_vectors(
     img_gen: ImageVGen,
     delete_not_found: bool,
 ):
-    l = log()
-    cl: AsyncCollection[FlatDoc] = mongo_client.collection()
-    stream: AsyncCursor[FlatDoc] = cl.find({})
-    l.info("converting stream to list...")
+    cl = mongo_client.collection()
+    stream: AsyncCursor[ImageDoc] = cl.find({})
+    log().info("converting stream to list...")
     list = await stream.to_list()
 
     it = 0
@@ -62,7 +61,7 @@ async def gen_vectors(
                 if delete_not_found:
                     d = DeleteOne(filter={"_id": id})
                     batch.append(d)
-                    l.warning(f"image not found, deleting: {path}")
+                    log().warning(f"image not found, deleting: {path}")
                     continue
                 else:
                     raise ValueError(f"image not found {path}")
@@ -76,18 +75,18 @@ async def gen_vectors(
             await batch_write(cl, batch)
 
         it += 1
-        l.info(f"iteration {it} done")
+        log().info(f"iteration {it} done")
 
     if len(batch) > 0:
         await batch_write(cl, batch)
 
-    l.info("done")
+    log().info("done")
 
 
 if __name__ == "__main__":
     init_logger(__name__)
     parser = argparse.ArgumentParser()
-    parser.add_argument("--delete-not-found", type=bool, default=False)
+    _ = parser.add_argument("--delete-not-found", type=bool, default=False)
 
     try:
         arg = parser.parse_args()

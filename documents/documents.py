@@ -1,6 +1,7 @@
 from typing import TypedDict
 from bson import ObjectId
 
-class FlatDoc(TypedDict):
+
+class ImageDoc(TypedDict):
     _id: ObjectId
     img: str

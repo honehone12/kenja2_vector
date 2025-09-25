@@ -1,23 +1,26 @@
 import os
+from pymongo.asynchronous.collection import AsyncCollection
 import torch
 from typing import final
 from pymongo import AsyncMongoClient
 from bson.binary import Binary, BinaryVectorDtype
+from documents.documents import ImageDoc
+
 
 @final
 class MongoClient:
     def __init__(self):
-        uri = os.getenv('MONGO_URI')
+        uri = os.getenv("MONGO_URI")
         if uri is None:
-            raise ValueError('env for mongo uri not set')
+            raise ValueError("env for mongo uri not set")
 
-        db = os.getenv('MONGO_DB')
+        db = os.getenv("MONGO_DB")
         if db is None:
-            raise ValueError('env for mongo db not set')
+            raise ValueError("env for mongo db not set")
 
         cl = os.getenv("MONGO_CL")
         if cl is None:
-            raise ValueError('env for mongo collection is not set')
+            raise ValueError("env for mongo collection is not set")
 
         self._client = AsyncMongoClient(uri)
         self._db = self._client[db]
@@ -26,11 +29,13 @@ class MongoClient:
     def database(self):
         return self._db
 
-    def collection(self):
+    def collection(self) -> AsyncCollection[ImageDoc]:
         return self._cl
+
 
 def compress_bin_f32(vector):
     return Binary.from_vector(vector, dtype=BinaryVectorDtype.FLOAT32)
+
 
 def compress_bin_i8(vector):
     # int8 -> -128~127
