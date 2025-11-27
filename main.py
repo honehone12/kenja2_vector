@@ -1,16 +1,18 @@
+import argparse
 import asyncio
 import os
-import argparse
 from typing import Any, final
+
 from dotenv import load_dotenv
 from pymongo import DeleteOne, UpdateOne
 from pymongo.asynchronous.collection import AsyncCollection
 from pymongo.asynchronous.cursor import AsyncCursor
+
 from db import mongo
 from documents.documents import ImageDoc
 from interfaces.vgen import ImageVGen
-from models.siglip2 import Siglip2
 from logger.logger import init_logger, log
+from models.siglip2 import Siglip2
 
 
 @final
@@ -86,7 +88,7 @@ async def gen_vectors(
 if __name__ == "__main__":
     init_logger(__name__)
     parser = argparse.ArgumentParser()
-    _ = parser.add_argument("--delete-not-found", type=bool, default=False)
+    _ = parser.add_argument("--delete", type=bool, default=False)
 
     try:
         arg = parser.parse_args()
@@ -96,6 +98,6 @@ if __name__ == "__main__":
         envs = Envs()
         img_gen = Siglip2()
         mongo_client = mongo.MongoClient()
-        asyncio.run(gen_vectors(envs, mongo_client, img_gen, arg.delete_not_found))
+        asyncio.run(gen_vectors(envs, mongo_client, img_gen, arg.delete))
     except Exception as e:
         log().error(e)
